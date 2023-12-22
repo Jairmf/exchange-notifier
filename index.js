@@ -38,7 +38,29 @@ async function handleDynamicWebPage() {
 			sale: Number(sale),
 		};
 	});
-	console.log(data);
+	console.log("tkambio", data);
+	await browser.close();
+    return data;
+}
+
+async function scrapWeb() {
+	const browser = await puppeteer.launch({
+		headless: 'new', //false,
+		slowMo: 2000,
+	});
+	const page = await browser.newPage();
+	await page.goto("https://mpodera.pe/");
+	const data = await page.evaluate(async () => {
+		const purcharse = document
+			.querySelector('span[id="pCompra"]').innerText;
+		const sale = document
+            .querySelector('span[id="pVenta"]').innerText;
+		return {
+			purcharse: Number(purcharse),
+			sale: Number(sale),
+		};
+	});
+	console.log("mpodera", data);
 	await browser.close();
     return data;
 }
@@ -46,12 +68,18 @@ async function handleDynamicWebPage() {
 // const ruleString = "*/30 * * * * *";
 const rule = new schedule.RecurrenceRule();
 rule.minute = 0;
+let preDataExchange = { purcharse: 0, sale: 0 };
 const job = schedule.scheduleJob(rule, async () => {
-	const dataExchange = await handleDynamicWebPage();
-    // { purcharse: 3.694, sale: 3.719 }
+    const dataExchange = await scrapWeb();
+	const dataExchange2 = await handleDynamicWebPage();
+    // { purcharse: 3.694, sale: 3.719 } { compra: 3.694, venta: 3.719 } 
     const fechaHoraActual = new Date().toLocaleString();
     console.log(`Fecha y hora actual: ${fechaHoraActual}`);
-	if (dataExchange.purcharse > 3.8 || dataExchange.sale < 3.7) {
+	if (
+        (dataExchange.purcharse > 3.8 || dataExchange.sale < 3.7) && 
+        dataExchange.purcharse + dataExchange.sale != 0 &&
+        (preDataExchange.purcharse != dataExchange.purcharse && preDataExchange.sale != dataExchange.sale) 
+    ) {
         console.log("Cumple condición, envía correo");
         const mailOptions = {
             from: `Notificaciones <pruebasdjmf@gmail.com>`,
@@ -88,7 +116,7 @@ const job = schedule.scheduleJob(rule, async () => {
                 <tbody>
                     <tr>
                         <td style="padding: 30px 30px 30px 30px; text-align: center;">
-                            <img src="https://tkambio.com/wp-content/uploads/2022/06/Logo-TKambio-200-x-200.png" alt="TKambio" width="100" height="100">
+                            <!-- <img src="https://tkambio.com/wp-content/uploads/2022/06/Logo-TKambio-200-x-200.png" alt="TKambio" width="100" height="100">-->
                             <h2>NOTIFICACIÓN DE TIPO DE CAMBIO</h2>
                             <h3>${fechaHoraActual || ""}</h3>
                         </td>
@@ -99,6 +127,11 @@ const job = schedule.scheduleJob(rule, async () => {
                                 <tbody>
                                     <tr>
                                         <td>
+                                            <div style="text-align: center;"><span style="font-size: 15px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">MPODERA </span></strong></span></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
                                             <div style="text-align: center;"><span style="font-size: 13px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">Compra: </span></strong></span></div>
                                             <div style="text-align: center;"><span style="font-size: 13px; font-family: Arial, Helvetica, sans-serif;">${dataExchange.purcharse || ""} </span></div>
                                         </td>
@@ -107,6 +140,23 @@ const job = schedule.scheduleJob(rule, async () => {
                                         <td>
                                             <div style="text-align: center;"><span style="font-size: 13px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">Venta: </span></strong></span></div>
                                             <div style="text-align: center;"><span style="font-size: 13px; font-family: Arial, Helvetica, sans-serif;">${dataExchange.sale || ""} </span></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="text-align: center;"><span style="font-size: 15px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">TKAMBIO </span></strong></span></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="text-align: center;"><span style="font-size: 13px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">Compra: </span></strong></span></div>
+                                            <div style="text-align: center;"><span style="font-size: 13px; font-family: Arial, Helvetica, sans-serif;">${dataExchange2.purcharse || ""} </span></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="text-align: center;"><span style="font-size: 13px;"><strong><span style="font-family: Arial, Helvetica, sans-serif;">Venta: </span></strong></span></div>
+                                            <div style="text-align: center;"><span style="font-size: 13px; font-family: Arial, Helvetica, sans-serif;">${dataExchange2.sale || ""} </span></div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -123,5 +173,6 @@ const job = schedule.scheduleJob(rule, async () => {
 	} else {
         console.log("No se envía correo");
     }
+    preDataExchange = dataExchange;
 	// job.cancel();
 });
