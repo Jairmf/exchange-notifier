@@ -76,7 +76,8 @@ const job = schedule.scheduleJob(rule, async () => {
     const fechaHoraActual = new Date().toLocaleString();
     console.log(`Fecha y hora actual: ${fechaHoraActual}`);
 	if (
-        (dataExchange.purcharse > 3.8 || dataExchange.sale < 3.7) && 
+        (//dataExchange.purcharse > 3.79 || 
+        dataExchange.sale < 3.69) && 
         dataExchange.purcharse + dataExchange.sale != 0 &&
         (preDataExchange.purcharse != dataExchange.purcharse && preDataExchange.sale != dataExchange.sale) 
     ) {
