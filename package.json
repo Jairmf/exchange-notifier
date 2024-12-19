@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "start": "node index.js",
+    "start": "pm2-runtime start ecosystem.config.js --env production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,7 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "node-schedule": "^2.1.1",
-    "nodemailer": "^6.9.7",
-    "puppeteer": "^21.6.1"
+    "nodemailer": "^6.9.16",
+    "pm2": "^5.4.3",
+    "puppeteer": "^21.11.0"
   }
 }

@@ -1,91 +1,100 @@
-import puppeteer from "puppeteer";
-import schedule from "node-schedule";
-import nodemailer from "nodemailer";
+const puppeteer = require("puppeteer");
+const schedule = require("node-schedule");
+const nodemailer = require("nodemailer");
+
+const { 
+    EMAIL_USER, 
+    EMAIL_PASS, 
+    MAIL_SENDER,
+    MAIL_RECEIVER,
+    MAIL_RECEIVER_2 
+} = process.env;
 
 const transporter = nodemailer.createTransport({
-	service: "Gmail",
-	auth: {
-		user: "pruebasdjmf@gmail.com",
-		pass: "pybrmrpjekaysndd",
-	},
+    service: "Gmail",
+    auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
+    },
 });
 
 async function sendMail(mailOptions) {
-	try {
-		const info = await transporter.sendMail(mailOptions);
-		console.log("Correo enviado con éxito:", info.response);
-	} catch (error) {
-		console.log("Error al enviar el correo:", error);
-	}
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Correo enviado con éxito:", info.response);
+    } catch (error) {
+        console.log("Error al enviar el correo:", error);
+    }
 }
 
 async function handleDynamicWebPage() {
-	const browser = await puppeteer.launch({
-		headless: 'new', // false,
-		slowMo: 2000,
-	});
-	const page = await browser.newPage();
-	await page.goto("https://tkambio.com/");
-	const data = await page.evaluate(async () => {
-		const purcharse = document
-			.querySelector(".purcharse-content")
-			.querySelector("div").innerText;
-		const sale = document
-			.querySelector(".sale-content")
-			.querySelector("div").innerText;
-		return {
-			purcharse: Number(purcharse),
-			sale: Number(sale),
-		};
-	});
-	console.log("tkambio", data);
-	await browser.close();
+    const browser = await puppeteer.launch({
+        headless: 'new', // false,
+        slowMo: 2000,
+    });
+    const page = await browser.newPage();
+    await page.goto("https://tkambio.com/");
+    const data = await page.evaluate(async () => {
+        const purcharse = document
+            .querySelector(".purcharse-content")
+            .querySelector("div").innerText;
+        const sale = document
+            .querySelector(".sale-content")
+            .querySelector("div").innerText;
+        return {
+            purcharse: Number(purcharse),
+            sale: Number(sale),
+        };
+    });
+    console.log("tkambio", data);
+    await browser.close();
     return data;
 }
 
 async function scrapWeb() {
-	const browser = await puppeteer.launch({
-		headless: 'new', //false,
-		slowMo: 2000,
-	});
-	const page = await browser.newPage();
-	await page.goto("https://mpodera.pe/");
-	const data = await page.evaluate(async () => {
-		const purcharse = document
-			.querySelector('span[id="pCompra"]').innerText;
-		const sale = document
+    const browser = await puppeteer.launch({
+        headless: 'new', //false,
+        slowMo: 2000,
+    });
+    const page = await browser.newPage();
+    await page.goto("https://mpodera.pe/");
+    const data = await page.evaluate(async () => {
+        const purcharse = document
+            .querySelector('span[id="pCompra"]').innerText;
+        const sale = document
             .querySelector('span[id="pVenta"]').innerText;
-		return {
-			purcharse: Number(purcharse),
-			sale: Number(sale),
-		};
-	});
-	console.log("mpodera", data);
-	await browser.close();
+        return {
+            purcharse: Number(purcharse),
+            sale: Number(sale),
+        };
+    });
+    console.log("mpodera", data);
+    await browser.close();
     return data;
 }
 
+console.log("Servicio exchange notifier iniciado");
 // const ruleString = "*/30 * * * * *";
 const rule = new schedule.RecurrenceRule();
 rule.minute = 0;
 let preDataExchange = { purcharse: 0, sale: 0 };
 const job = schedule.scheduleJob(rule, async () => {
     const dataExchange = await scrapWeb();
-	const dataExchange2 = await handleDynamicWebPage();
+    const dataExchange2 = await handleDynamicWebPage();
     // { purcharse: 3.694, sale: 3.719 } { compra: 3.694, venta: 3.719 } 
     const fechaHoraActual = new Date().toLocaleString();
     console.log(`Fecha y hora actual: ${fechaHoraActual}`);
-	if (
-        (//dataExchange.purcharse > 3.79 || 
+    if (
+        (dataExchange.purcharse > 3.78 || 
         dataExchange.sale < 3.69) && 
         dataExchange.purcharse + dataExchange.sale != 0 &&
         (preDataExchange.purcharse != dataExchange.purcharse && preDataExchange.sale != dataExchange.sale) 
     ) {
         console.log("Cumple condición, envía correo");
         const mailOptions = {
-            from: `Notificaciones <pruebasdjmf@gmail.com>`,
-            to: "emilysalazarcastillo@gmail.com",
-            bcc: "jairmf2302@gmail.com",
+            from: `Notificaciones <${MAIL_SENDER}>`,
+            to: MAIL_RECEIVER,
+            bcc: MAIL_RECEIVER_2,
             subject: `Alerta de Tipo de Cambio - Compra: ${dataExchange.purcharse || ""} Venta: ${dataExchange.sale || ""}`,
             // text: "Contenido del correo",
             html: `
@@ -170,10 +179,10 @@ const job = schedule.scheduleJob(rule, async () => {
                 </tbody>
             </table>`
         };
-		sendMail(mailOptions);
-	} else {
+        sendMail(mailOptions);
+    } else {
         console.log("No se envía correo");
     }
     preDataExchange = dataExchange;
-	// job.cancel();
+    // job.cancel();
 });
