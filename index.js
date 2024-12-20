@@ -76,11 +76,11 @@ async function scrapWeb() {
 }
 
 console.log("Servicio exchange notifier iniciado");
-const ruleString = "*/30 * * * * *";
-// const rule = new schedule.RecurrenceRule();
-// rule.minute = 0;
+// const ruleString = "*/30 * * * * *";
+const rule = new schedule.RecurrenceRule();
+rule.minute = 0;
 let preDataExchange = { purcharse: 0, sale: 0 };
-const job = schedule.scheduleJob(ruleString, async () => {
+const job = schedule.scheduleJob(rule, async () => {
     const dataExchange = await scrapWeb();
     const dataExchange2 = await handleDynamicWebPage();
     // { purcharse: 3.694, sale: 3.719 } { compra: 3.694, venta: 3.719 } 
