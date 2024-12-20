@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const schedule = require("node-schedule");
 const nodemailer = require("nodemailer");
 
