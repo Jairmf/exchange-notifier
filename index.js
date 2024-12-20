@@ -31,6 +31,7 @@ async function handleDynamicWebPage() {
     const browser = await puppeteer.launch({
         headless: 'new', // false,
         slowMo: 2000,
+        args: ['--no-sandbox']
     });
     const page = await browser.newPage();
     await page.goto("https://tkambio.com/");
@@ -55,6 +56,7 @@ async function scrapWeb() {
     const browser = await puppeteer.launch({
         headless: 'new', //false,
         slowMo: 2000,
+        args: ['--no-sandbox']
     });
     const page = await browser.newPage();
     await page.goto("https://mpodera.pe/");
