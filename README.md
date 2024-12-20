@@ -29,3 +29,4 @@ Install instead
 ```bash
 sudo apt-get install libasound2t64
 ```
+Fuente: https://pptr.dev/troubleshooting#chrome-doesnt-launch-on-linux
